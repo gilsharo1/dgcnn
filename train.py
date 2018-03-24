@@ -165,11 +165,11 @@ def train():
             sys.stdout.flush()
              
             train_one_epoch(sess, ops, train_writer)
-            eval_one_epoch(sess, ops, test_writer)
+            accuracy = eval_one_epoch(sess, ops, test_writer)
             
             # Save the variables to disk.
-            if epoch % 5 == 0:
-                save_path = saver.save(sess, os.path.join(LOG_DIR, "model.ckpt"))
+            if epoch % 3 == 0:
+                save_path = saver.save(sess, os.path.join(LOG_DIR, "model_"+str(epoch)+'_'+str(accuracy)+".ckpt"))
                 log_string("Model saved in file: %s" % save_path)
 
 
@@ -265,6 +265,7 @@ def eval_one_epoch(sess, ops, test_writer):
     log_string('eval mean loss: %f' % (loss_sum / float(total_seen)))
     log_string('eval accuracy: %f'% (total_correct / float(total_seen)))
     log_string('eval avg class acc: %f' % (np.mean(np.array(total_correct_class)/np.array(total_seen_class,dtype=np.float))))
+    return round(total_correct / float(total_seen)*100)/100.0
          
 
 
