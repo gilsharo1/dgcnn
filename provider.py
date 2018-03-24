@@ -148,6 +148,12 @@ def load_h5(h5_filename):
 def loadDataFile(filename):
   return load_h5(filename)
 
+def unpickle(file):
+    import cPickle
+    with open(file, 'rb') as fo:
+        dict = cPickle.load(fo)
+    return dict['data'], dict['labels']
+
 
 def load_h5_data_label_seg(h5_filename):
   f = h5py.File(h5_filename)
