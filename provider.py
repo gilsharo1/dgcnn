@@ -154,6 +154,18 @@ def unpickle(file):
         dict = cPickle.load(fo)
     return dict['data'], dict['labels']
 
+def raw_images_to_tensor(data):
+  n = data.shape[0]
+  im = data.reshape(n, 3, 32, 32).transpose(0, 2, 3, 1)
+  vec = im.reshape(n, 1024, 3)
+  coor = np.meshgrid(range(32), range(32))
+  x = np.repeat(coor[0][:, :, np.newaxis], n, axis=2).astype('uint8')
+  x = x.transpose(2, 0, 1)
+  y = np.repeat(coor[1][:, :, np.newaxis], n, axis=2).astype('uint8')
+  y = y.transpose(2, 0, 1)
+  alldata = np.concatenate((im, x[:,:,:,np.newaxis], y[:,:,:,np.newaxis]), axis=3)
+  alldata = alldata.reshape(n,1024,5)
+
 
 def load_h5_data_label_seg(h5_filename):
   f = h5py.File(h5_filename)
