@@ -117,7 +117,7 @@ def shift_point_cloud(batch_data, shift_range=0.1):
       BxNx3 array, shifted batch of point clouds
   """
   B, N, C = batch_data.shape
-  shifts = np.random.uniform(-shift_range, shift_range, (B,3))
+  shifts = np.random.uniform(-shift_range, shift_range, (B,5))
   for batch_index in range(B):
     batch_data[batch_index,:,:] += shifts[batch_index,:]
   return batch_data
@@ -156,15 +156,15 @@ def unpickle(file):
 
 def raw_images_to_tensor(data):
   n = data.shape[0]
-  im = data.reshape(n, 3, 32, 32).transpose(0, 2, 3, 1)
-  vec = im.reshape(n, 1024, 3)
+  im = (data.reshape(n, 3, 32, 32).transpose(0, 2, 3, 1).astype('float')-128.0)/128.0
   coor = np.meshgrid(range(32), range(32))
-  x = np.repeat(coor[0][:, :, np.newaxis], n, axis=2).astype('uint8')
-  x = x.transpose(2, 0, 1)
-  y = np.repeat(coor[1][:, :, np.newaxis], n, axis=2).astype('uint8')
-  y = y.transpose(2, 0, 1)
+  x = np.repeat(coor[0][:, :, np.newaxis], n, axis=2).astype('float')
+  x = (x.transpose(2, 0, 1)-16.0)/16.0
+  y = np.repeat(coor[1][:, :, np.newaxis], n, axis=2).astype('float')
+  y = (y.transpose(2, 0, 1)-16.0)/16.0
   alldata = np.concatenate((im, x[:,:,:,np.newaxis], y[:,:,:,np.newaxis]), axis=3)
   alldata = alldata.reshape(n,1024,5)
+  return alldata
 
 
 def load_h5_data_label_seg(h5_filename):

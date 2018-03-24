@@ -12,7 +12,7 @@ from transform_nets import input_transform_net
 
 
 def placeholder_inputs(batch_size, num_point):
-  pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 3))
+  pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 5))
   labels_pl = tf.placeholder(tf.int32, shape=(batch_size))
   return pointclouds_pl, labels_pl
 
@@ -31,10 +31,10 @@ def get_model(point_cloud, is_training, bn_decay=None):
   with tf.variable_scope('transform_net1') as sc:
     transform = input_transform_net(edge_feature, is_training, bn_decay, K=3)
 
-  point_cloud_transformed = tf.matmul(point_cloud, transform)
-  adj_matrix = tf_util.pairwise_distance(point_cloud_transformed)
+  #point_cloud_transformed = tf.matmul(point_cloud, transform)
+  adj_matrix = tf_util.pairwise_distance(point_cloud)
   nn_idx = tf_util.knn(adj_matrix, k=k)
-  edge_feature = tf_util.get_edge_feature(point_cloud_transformed, nn_idx=nn_idx, k=k)
+  edge_feature = tf_util.get_edge_feature(point_cloud, nn_idx=nn_idx, k=k)
 
   net = tf_util.conv2d(edge_feature, 64, [1,1],
                        padding='VALID', stride=[1,1],
@@ -93,7 +93,7 @@ def get_model(point_cloud, is_training, bn_decay=None):
                                 scope='fc2', bn_decay=bn_decay)
   net = tf_util.dropout(net, keep_prob=0.5, is_training=is_training,
                         scope='dp2')
-  net = tf_util.fully_connected(net, 40, activation_fn=None, scope='fc3')
+  net = tf_util.fully_connected(net, 10, activation_fn=None, scope='fc3')
 
   return net, end_points
 
@@ -101,7 +101,7 @@ def get_model(point_cloud, is_training, bn_decay=None):
 def get_loss(pred, label, end_points):
   """ pred: B*NUM_CLASSES,
       label: B, """
-  labels = tf.one_hot(indices=label, depth=40)
+  labels = tf.one_hot(indices=label, depth=10)
   loss = tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=pred, label_smoothing=0.2)
   classify_loss = tf.reduce_mean(loss)
   return classify_loss
@@ -110,7 +110,7 @@ def get_loss(pred, label, end_points):
 if __name__=='__main__':
   batch_size = 2
   num_pt = 124
-  pos_dim = 3
+  pos_dim = 5
 
   input_feed = np.random.rand(batch_size, num_pt, pos_dim)
   label_feed = np.random.rand(batch_size)

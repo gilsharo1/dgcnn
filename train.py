@@ -50,7 +50,7 @@ LOG_FOUT = open(os.path.join(LOG_DIR, 'log_train.txt'), 'w')
 LOG_FOUT.write(str(FLAGS)+'\n')
 
 MAX_NUM_POINT = 2048
-NUM_CLASSES = 40
+NUM_CLASSES = 10
 
 BN_INIT_DECAY = 0.5
 BN_DECAY_DECAY_RATE = 0.5
@@ -60,13 +60,15 @@ BN_DECAY_CLIP = 0.99
 HOSTNAME = socket.gethostname()
 
 # ModelNet40 official train/test split
-TRAIN_FILES = provider.getDataFiles( \
-    os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/train_files.txt'))
+#TRAIN_FILES = provider.getDataFiles( \
+#    os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/train_files.txt'))
 
 TRAIN_FILES = glob.glob(os.path.join(BASE_DIR,'data/cifar-10-batches-py/data*'))
 
-TEST_FILES = provider.getDataFiles(\
-    os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/test_files.txt'))
+#TEST_FILES = provider.getDataFiles(\
+#    os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/test_files.txt'))
+
+TEST_FILES = glob.glob(os.path.join(BASE_DIR,'data/cifar-10-batches-py/test*'))
 
 def log_string(out_str):
     LOG_FOUT.write(out_str+'\n')
@@ -166,7 +168,7 @@ def train():
             eval_one_epoch(sess, ops, test_writer)
             
             # Save the variables to disk.
-            if epoch % 10 == 0:
+            if epoch % 5 == 0:
                 save_path = saver.save(sess, os.path.join(LOG_DIR, "model.ckpt"))
                 log_string("Model saved in file: %s" % save_path)
 
@@ -200,10 +202,10 @@ def train_one_epoch(sess, ops, train_writer):
             end_idx = (batch_idx+1) * BATCH_SIZE
             
             # Augment batched point clouds by rotation and jittering
-            rotated_data = provider.rotate_point_cloud(current_data[start_idx:end_idx, :, :])
-            jittered_data = provider.jitter_point_cloud(rotated_data)
+            #rotated_data = provider.rotate_point_cloud(current_data[start_idx:end_idx, :, :])
+            jittered_data = provider.jitter_point_cloud(current_data[start_idx:end_idx, :, :])
             jittered_data = provider.random_scale_point_cloud(jittered_data)
-            jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
+            #jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
             jittered_data = provider.shift_point_cloud(jittered_data)
 
             feed_dict = {ops['pointclouds_pl']: jittered_data,
@@ -233,7 +235,8 @@ def eval_one_epoch(sess, ops, test_writer):
     
     for fn in range(len(TEST_FILES)):
         log_string('----' + str(fn) + '-----')
-        current_data, current_label = provider.loadDataFile(TEST_FILES[fn])
+        current_data, current_label = provider.unpickle(TEST_FILES[fn])
+        current_data = provider.raw_images_to_tensor(current_data)
         current_data = current_data[:,0:NUM_POINT,:]
         current_label = np.squeeze(current_label)
         
