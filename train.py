@@ -21,12 +21,13 @@ parser.add_argument('--model', default='dgcnn', help='Model name: dgcnn')
 parser.add_argument('--log_dir', default='log', help='Log dir [default: log]')
 parser.add_argument('--num_point', type=int, default=1024, help='Point Number [256/512/1024/2048] [default: 1024]')
 parser.add_argument('--max_epoch', type=int, default=250, help='Epoch to run [default: 250]')
-parser.add_argument('--batch_size', type=int, default=8, help='Batch Size during training [default: 32]')
+parser.add_argument('--batch_size', type=int, default=16, help='Batch Size during training [default: 32]')
 parser.add_argument('--learning_rate', type=float, default=0.001, help='Initial learning rate [default: 0.001]')
 parser.add_argument('--momentum', type=float, default=0.9, help='Initial learning rate [default: 0.9]')
 parser.add_argument('--optimizer', default='adam', help='adam or momentum [default: adam]')
 parser.add_argument('--decay_step', type=int, default=200000, help='Decay step for lr decay [default: 200000]')
 parser.add_argument('--decay_rate', type=float, default=0.7, help='Decay rate for lr decay [default: 0.8]')
+parser.add_argument('--saved_model', type=str, default="", help='Decay rate for lr decay [default: 0.8]')
 FLAGS = parser.parse_args()
 
 
@@ -150,6 +151,9 @@ def train():
         # http://stackoverflow.com/questions/41543774/invalidargumenterror-for-tensor-bool-tensorflow-0-12-1
         #sess.run(init)
         sess.run(init, {is_training_pl: True})
+
+        if len(FLAGS.saved_model):
+           saver.restore(sess, os.path.join(LOG_DIR, FLAGS.saved_model))
 
         ops = {'pointclouds_pl': pointclouds_pl,
                'labels_pl': labels_pl,
