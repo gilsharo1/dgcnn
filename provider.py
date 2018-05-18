@@ -18,12 +18,18 @@ if not os.path.exists(os.path.join(DATA_DIR, 'modelnet40_ply_hdf5_2048')):
   os.system('mv %s %s' % (zipfile[:-4], DATA_DIR))
   os.system('rm %s' % (zipfile))
 
+sometimes = lambda aug: iaa.Sometimes(0.9, aug)
+
 seq = iaa.Sequential([
-    iaa.Crop(px=(0, 4)), # crop images from each side by 0 to 16px (randomly chosen)
+    sometimes([
+    iaa.Pad(px=(0,3)),
+    iaa.Crop(px=(0, 3)), # crop images from each side by 0 to 16px (randomly chosen)
     iaa.Fliplr(0.5), # horizontally flip 50% of the images
-    #iaa.GaussianBlur(sigma=(0, 2.0)) # blur images with a sigma of 0 to 3.0
+    #iaa.GaussianBlur(sigma=(0, 1.0)), # blur images with a sigma of 0 to 3.0
+    #iaa.AdditiveGaussianNoise(scale=(0,0.03*255)),
     iaa.Add(value=(-20,20)),
-    iaa.Multiply(mul=(0.9,1.1))
+    iaa.Multiply(mul=(0.8,1.2)),
+    iaa.Dropout((0.0, 0.05)),])
 ])
 
 def shuffle_data(data, labels):
