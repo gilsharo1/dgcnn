@@ -18,8 +18,8 @@ import tf_util
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', type=int, default=0, help='GPU to use [default: GPU 0]')
-parser.add_argument('--model', default='cnn2', help='Model name: dgcnn')
-parser.add_argument('--log_dir', default='log_cnn', help='Log dir [default: log]')
+parser.add_argument('--model', default='cnn_baseline', help='Model name: dgcnn')
+parser.add_argument('--log_dir', default='log_cnn_baseline', help='Log dir [default: log]')
 parser.add_argument('--num_point', type=int, default=1024, help='Point Number [256/512/1024/2048] [default: 1024]')
 parser.add_argument('--max_epoch', type=int, default=250, help='Epoch to run [default: 250]')
 parser.add_argument('--batch_size', type=int, default=32, help='Batch Size during training [default: 32]')
@@ -194,7 +194,7 @@ def train_one_epoch(sess, ops, train_writer):
     for fn in range(len(TRAIN_FILES)):
         log_string('----' + str(fn) + '-----')
         current_data, current_label = provider.unpickle(TRAIN_FILES[train_file_idxs[fn]])
-        current_data = provider.raw_images_to_image_tensor(current_data)
+        current_data = provider.raw_images_to_image_tensor(current_data,is_aug=True)
         current_data, current_label, _ = provider.shuffle_data(current_data, np.squeeze(current_label))
         current_label = np.squeeze(current_label)
 

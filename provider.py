@@ -2,6 +2,8 @@ import os
 import sys
 import numpy as np
 import h5py
+from imgaug.imgaug import augmenters as iaa
+import random
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 
@@ -16,6 +18,13 @@ if not os.path.exists(os.path.join(DATA_DIR, 'modelnet40_ply_hdf5_2048')):
   os.system('mv %s %s' % (zipfile[:-4], DATA_DIR))
   os.system('rm %s' % (zipfile))
 
+seq = iaa.Sequential([
+    iaa.Crop(px=(0, 4)), # crop images from each side by 0 to 16px (randomly chosen)
+    iaa.Fliplr(0.5), # horizontally flip 50% of the images
+    #iaa.GaussianBlur(sigma=(0, 2.0)) # blur images with a sigma of 0 to 3.0
+    iaa.Add(value=(-20,20)),
+    iaa.Multiply(mul=(0.9,1.1))
+])
 
 def shuffle_data(data, labels):
   """ Shuffle data and labels.
@@ -166,10 +175,17 @@ def raw_images_to_tensor(data):
   alldata = alldata.reshape(n,1024,5)
   return alldata
 
-def raw_images_to_image_tensor(data):
+def raw_images_to_image_tensor(data, is_aug=False):
   n = data.shape[0]
-  im = (data.reshape(n, 3, 32, 32).transpose(0, 2, 3, 1).astype('float')-128.0)/128.0
+  im = data.reshape(n, 3, 32, 32).transpose(0, 2, 3, 1).astype('uint8')
+
+  if is_aug:
+    im = seq.augment_images(im)
+
+  im = (im.astype('float')-128.0)/128.0
+
   return im
+
 
 
 def load_h5_data_label_seg(h5_filename):
