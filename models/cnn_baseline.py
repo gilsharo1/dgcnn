@@ -22,51 +22,63 @@ def get_model(point_cloud, is_training, bn_decay=None):
     """ Classification PointNet, input is BxNx3, output Bx40 """
     batch_size = point_cloud.get_shape()[0].value
 
-    net = tf_util.conv2d(point_cloud, 32, [3, 3],
+    net = tf_util.conv2d(point_cloud, 64, [3, 3],
                          padding='SAME', stride=[1, 1],
                          bn=True, is_training=is_training,
-                         scope='cnn1', bn_decay=bn_decay, weight_decay=0.04)
+                         scope='cnn1', bn_decay=bn_decay)
 
-    net = tf_util.conv2d(point_cloud, 32, [3, 3],
+    net = tf_util.conv2d(point_cloud, 64, [3, 3],
                          padding='SAME', stride=[1, 1],
                          bn=True, is_training=is_training,
-                         scope='cnn2', bn_decay=bn_decay, weight_decay=0.04)
-
-    net = tf_util.max_pool2d(net, kernel_size=[3, 3], stride=[2, 2], scope='mp2')
-
-    net = tf_util.conv2d(net, 64, [3, 3],
-                         padding='SAME', stride=[1, 1],
-                         bn=True, is_training=is_training,
-                         scope='cnn3', bn_decay=bn_decay, weight_decay=0.04)
-
-    net = tf_util.conv2d(net, 64, [3, 3],
-                         padding='SAME', stride=[1, 1],
-                         bn=True, is_training=is_training,
-                         scope='cnn4', bn_decay=bn_decay, weight_decay=0.04)
+                         scope='cnn2', bn_decay=bn_decay)
 
     net = tf_util.max_pool2d(net, kernel_size=[3, 3], stride=[2, 2], scope='mp2')
 
     net = tf_util.conv2d(net, 128, [3, 3],
                          padding='SAME', stride=[1, 1],
                          bn=True, is_training=is_training,
-                         scope='cnn5', bn_decay=bn_decay, weight_decay=0.04)
+                         scope='cnn3', bn_decay=bn_decay)
 
     net = tf_util.conv2d(net, 128, [3, 3],
                          padding='SAME', stride=[1, 1],
                          bn=True, is_training=is_training,
-                         scope='cnn6', bn_decay=bn_decay, weight_decay=0.04)
+                         scope='cnn4', bn_decay=bn_decay)
+
+    net = tf_util.max_pool2d(net, kernel_size=[3, 3], stride=[2, 2], scope='mp2')
+
+    net = tf_util.conv2d(net, 256, [3, 3],
+                         padding='SAME', stride=[1, 1],
+                         bn=True, is_training=is_training,
+                         scope='cnn5', bn_decay=bn_decay)
+
+    net = tf_util.conv2d(net, 256, [3, 3],
+                         padding='SAME', stride=[1, 1],
+                         bn=True, is_training=is_training,
+                         scope='cnn6', bn_decay=bn_decay)
+
+    net = tf_util.max_pool2d(net, kernel_size=[3, 3], stride=[2, 2], scope='mp2')
+
+    net = tf_util.conv2d(net, 512, [3, 3],
+                         padding='SAME', stride=[1, 1],
+                         bn=True, is_training=is_training,
+                         scope='cnn7', bn_decay=bn_decay)
+
+    net = tf_util.conv2d(net, 512, [3, 3],
+                         padding='SAME', stride=[1, 1],
+                         bn=True, is_training=is_training,
+                         scope='cnn8', bn_decay=bn_decay)
 
     net = tf_util.max_pool2d(net, kernel_size=[3, 3], stride=[2, 2], scope='mp2')
 
     # MLP on global point cloud vector
     net = tf.reshape(net, [batch_size, -1])
     net = tf_util.fully_connected(net, 512, bn=True, is_training=is_training,
-                                  scope='fc1', bn_decay=bn_decay)
-    net = tf_util.dropout(net, keep_prob=0.5, is_training=is_training,
+                                  scope='fc1', bn_decay=bn_decay, weight_decay=0.004)
+    net = tf_util.dropout(net, keep_prob=0.8, is_training=is_training,
                           scope='dp1')
     net = tf_util.fully_connected(net, 256, bn=True, is_training=is_training,
-                                  scope='fc2', bn_decay=bn_decay)
-    net = tf_util.dropout(net, keep_prob=0.5, is_training=is_training,
+                                  scope='fc2', bn_decay=bn_decay, weight_decay=0.004)
+    net = tf_util.dropout(net, keep_prob=0.8, is_training=is_training,
                           scope='dp2')
     net = tf_util.fully_connected(net, 10, activation_fn=None, scope='fc3')
 
