@@ -22,7 +22,7 @@ def get_model(point_cloud, is_training, bn_decay=None):
   batch_size = point_cloud.get_shape()[0].value
   num_point = point_cloud.get_shape()[1].value
   end_points = {}
-  k = 8
+  k = 9
 
   adj_matrix = tf_util.pairwise_distance(point_cloud)
   nn_idx = tf_util.knn(adj_matrix, k=k)
@@ -109,7 +109,7 @@ def get_loss(pred, label, end_points):
 
 if __name__=='__main__':
   batch_size = 2
-  num_pt = 124
+  num_pt = 1024
   pos_dim = 5
 
   input_feed = np.random.rand(batch_size, num_pt, pos_dim)

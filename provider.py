@@ -169,9 +169,9 @@ def unpickle(file):
         dict = cPickle.load(fo)
     return dict['data'], dict['labels']
 
-def raw_images_to_tensor(data):
+def raw_images_to_tensor(data, is_aug=False):
   n = data.shape[0]
-  im = (data.reshape(n, 3, 32, 32).transpose(0, 2, 3, 1).astype('float')-128.0)/128.0
+  im = raw_images_to_image_tensor(data, is_aug)
   coor = np.meshgrid(range(32), range(32))
   x = np.repeat(coor[0][:, :, np.newaxis], n, axis=2).astype('float')
   x = (x.transpose(2, 0, 1)-16.0)*2.0
