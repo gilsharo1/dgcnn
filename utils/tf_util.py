@@ -664,8 +664,21 @@ def k_max_pool(point_cloud, frac=0.5):
         point_cloud = tf.expand_dims(point_cloud, 0)
 
     point_cloud_square = tf.reduce_sum(tf.square(point_cloud), axis=-1, keep_dims=False)
-    _, nn_idx = tf.nn.top_k(point_cloud_square, k=tf.int32(num_point*frac))
-    return point_cloud[:,nn_idx,:]
+    _, nn_idx = tf.nn.top_k(point_cloud_square, k=int(num_point*frac))
+
+    point_cloud_shape = point_cloud.get_shape()
+    batch_size = point_cloud_shape[0].value
+    num_points = point_cloud_shape[1].value
+    num_dims = point_cloud_shape[2].value
+
+    idx_ = tf.range(batch_size) * num_points
+    idx_ = tf.reshape(idx_, [batch_size, 1])
+
+    point_cloud_flat = tf.reshape(point_cloud, [-1, num_dims])
+    point_cloud_neighbors = tf.gather(point_cloud_flat, nn_idx + idx_)
+
+    return point_cloud_neighbors
+
 
 
 def knn(adj_matrix, k=20):
