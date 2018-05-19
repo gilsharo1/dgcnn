@@ -45,9 +45,14 @@ def get_model(point_cloud, is_training, bn_decay=None):
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
 
-    net = tf_util.max_pool2d(edge_feature, kernel_size=[9, 1], stride=[4, 1], scope='mp2')
+    net = tf.reduce_max(edge_feature, axis=-2, keep_dims=True)
+    net = tf_util.max_pool2d(net, kernel_size=[1, 1], stride=[4, 1], scope='mp1')
 
-    net = tf_util.conv2d(net, 128, [1, 9],
+    adj_matrix = tf_util.pairwise_distance(net)
+    nn_idx = tf_util.knn(adj_matrix, k=k)
+    edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
+
+    net = tf_util.conv2d(edge_feature, 128, [1, 9],
                          padding='VALID', stride=[1, 1],
                          bn=True, is_training=is_training,
                          scope='cnn3', bn_decay=bn_decay)
@@ -65,9 +70,14 @@ def get_model(point_cloud, is_training, bn_decay=None):
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
 
-    net = tf_util.max_pool2d(edge_feature, kernel_size=[9, 1], stride=[4, 1], scope='mp2')
+    net = tf.reduce_max(edge_feature, axis=-2, keep_dims=True)
+    net = tf_util.max_pool2d(net, kernel_size=[1, 1], stride=[4, 1], scope='mp2')
 
-    net = tf_util.conv2d(net, 256, [1, 9],
+    adj_matrix = tf_util.pairwise_distance(net)
+    nn_idx = tf_util.knn(adj_matrix, k=k)
+    edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
+
+    net = tf_util.conv2d(edge_feature, 256, [1, 9],
                          padding='VALID', stride=[1, 1],
                          bn=True, is_training=is_training,
                          scope='cnn5', bn_decay=bn_decay)
@@ -85,9 +95,14 @@ def get_model(point_cloud, is_training, bn_decay=None):
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
 
-    net = tf_util.max_pool2d(edge_feature, kernel_size=[9, 1], stride=[4, 1], scope='mp2')
+    net = tf.reduce_max(edge_feature, axis=-2, keep_dims=True)
+    net = tf_util.max_pool2d(net, kernel_size=[1, 1], stride=[4, 1], scope='mp3')
 
-    net = tf_util.conv2d(net, 512, [1, 9],
+    adj_matrix = tf_util.pairwise_distance(net)
+    nn_idx = tf_util.knn(adj_matrix, k=k)
+    edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
+
+    net = tf_util.conv2d(edge_feature, 512, [1, 9],
                          padding='VALID', stride=[1, 1],
                          bn=True, is_training=is_training,
                          scope='cnn7', bn_decay=bn_decay)

@@ -655,6 +655,19 @@ def pairwise_distance(point_cloud):
   return point_cloud_square + point_cloud_inner + point_cloud_square_tranpose
 
 
+def k_max_pool(point_cloud, frac=0.5):
+
+    og_batch_size = point_cloud.get_shape().as_list()[0]
+    num_point = point_cloud.get_shape().as_list()[1]
+    point_cloud = tf.squeeze(point_cloud)
+    if og_batch_size == 1:
+        point_cloud = tf.expand_dims(point_cloud, 0)
+
+    point_cloud_square = tf.reduce_sum(tf.square(point_cloud), axis=-1, keep_dims=False)
+    _, nn_idx = tf.nn.top_k(point_cloud_square, k=tf.int32(num_point*frac))
+    return point_cloud[:,nn_idx,:]
+
+
 def knn(adj_matrix, k=20):
   """Get KNN based on the pairwise distance.
   Args:
