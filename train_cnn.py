@@ -33,8 +33,8 @@ parser.add_argument('--saved_model', type=str, default="", help='Decay rate for 
 FLAGS = parser.parse_args()
 
 BATCH_SIZE = FLAGS.batch_size
-WIDTH=32
-HEIGHT =32
+WIDTH=28
+HEIGHT =28
 MAX_EPOCH = FLAGS.max_epoch
 BASE_LEARNING_RATE = FLAGS.learning_rate
 GPU_INDEX = FLAGS.gpu
@@ -62,10 +62,10 @@ BN_DECAY_CLIP = 0.99
 
 HOSTNAME = socket.gethostname()
 
-train_images = mnist.train_images()
+train_images = mnist.train_images().astype('uint8')
 train_labels = mnist.train_labels()
 
-test_images = mnist.test_images()
+test_images = mnist.test_images().astype('uint8')
 test_labels = mnist.test_labels()
 
 def log_string(out_str):
@@ -185,8 +185,12 @@ def train_one_epoch(sess, ops, train_writer):
     #current_data = provider.raw_images_to_image_tensor(current_data,is_aug=True)
 
     current_data, current_label = train_images, train_labels
+    current_data = provider.augment_images(current_data)
+    current_data = (current_data.astype('float') - 128.0) / 128.0
     current_data, current_label, _ = provider.shuffle_data(current_data, np.squeeze(current_label))
     current_label = np.squeeze(current_label)
+    current_data = current_data[:,:,:,np.newaxis]
+
 
     file_size = current_data.shape[0]
     num_batches = file_size // BATCH_SIZE
@@ -225,33 +229,32 @@ def eval_one_epoch(sess, ops, test_writer):
     total_seen_class = [0 for _ in range(NUM_CLASSES)]
     total_correct_class = [0 for _ in range(NUM_CLASSES)]
 
-    for fn in range(len(TEST_FILES)):
-        log_string('----' + str(fn) + '-----')
-        current_data, current_label = provider.unpickle(TEST_FILES[fn])
-        current_data = provider.raw_images_to_image_tensor(current_data)
-        current_label = np.squeeze(current_label)
+    current_data, current_label = test_images, test_labels
+    current_data = (current_data.astype('float') - 128.0) / 128.0
+    current_label = np.squeeze(current_label)
+    current_data = current_data[:, :, :, np.newaxis]
 
-        file_size = current_data.shape[0]
-        num_batches = file_size // BATCH_SIZE
+    file_size = current_data.shape[0]
+    num_batches = file_size // BATCH_SIZE
 
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * BATCH_SIZE
-            end_idx = (batch_idx + 1) * BATCH_SIZE
+    for batch_idx in range(num_batches):
+        start_idx = batch_idx * BATCH_SIZE
+        end_idx = (batch_idx + 1) * BATCH_SIZE
 
-            feed_dict = {ops['pointclouds_pl']: current_data[start_idx:end_idx, :, :, :],
-                         ops['labels_pl']: current_label[start_idx:end_idx],
-                         ops['is_training_pl']: is_training}
-            summary, step, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
-                                                          ops['loss'], ops['pred']], feed_dict=feed_dict)
-            pred_val = np.argmax(pred_val, 1)
-            correct = np.sum(pred_val == current_label[start_idx:end_idx])
-            total_correct += correct
-            total_seen += BATCH_SIZE
-            loss_sum += (loss_val * BATCH_SIZE)
-            for i in range(start_idx, end_idx):
-                l = current_label[i]
-                total_seen_class[l] += 1
-                total_correct_class[l] += (pred_val[i - start_idx] == l)
+        feed_dict = {ops['pointclouds_pl']: current_data[start_idx:end_idx, :, :, :],
+                     ops['labels_pl']: current_label[start_idx:end_idx],
+                     ops['is_training_pl']: is_training}
+        summary, step, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
+                                                      ops['loss'], ops['pred']], feed_dict=feed_dict)
+        pred_val = np.argmax(pred_val, 1)
+        correct = np.sum(pred_val == current_label[start_idx:end_idx])
+        total_correct += correct
+        total_seen += BATCH_SIZE
+        loss_sum += (loss_val * BATCH_SIZE)
+        for i in range(start_idx, end_idx):
+            l = current_label[i]
+            total_seen_class[l] += 1
+            total_correct_class[l] += (pred_val[i - start_idx] == l)
 
     log_string('eval mean loss: %f' % (loss_sum / float(total_seen)))
     log_string('eval accuracy: %f' % (total_correct / float(total_seen)))

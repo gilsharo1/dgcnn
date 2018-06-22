@@ -24,7 +24,7 @@ seq = iaa.Sequential([
     sometimes([
     iaa.Pad(px=(0,3)),
     iaa.Crop(px=(0, 3)), # crop images from each side by 0 to 16px (randomly chosen)
-    iaa.Fliplr(0.5), # horizontally flip 50% of the images
+    #iaa.Fliplr(0.5), # horizontally flip 50% of the images
     #iaa.GaussianBlur(sigma=(0, 1.0)), # blur images with a sigma of 0 to 3.0
     #iaa.AdditiveGaussianNoise(scale=(0,0.03*255)),
     iaa.Add(value=(-20,20)),
@@ -192,6 +192,9 @@ def raw_images_to_image_tensor(data, is_aug=False):
 
   return im
 
+
+def augment_images(data):
+    return seq.augment_images(data)
 
 
 def load_h5_data_label_seg(h5_filename):
