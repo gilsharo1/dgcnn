@@ -8,6 +8,7 @@ import importlib
 import os
 import sys
 import glob
+import mnist
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
@@ -19,7 +20,7 @@ import tf_util
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', type=int, default=0, help='GPU to use [default: GPU 0]')
 parser.add_argument('--model', default='cnn_baseline', help='Model name: dgcnn')
-parser.add_argument('--log_dir', default='log_cnn_baseline', help='Log dir [default: log]')
+parser.add_argument('--log_dir', default='log_cnn_mnist_baseline', help='Log dir [default: log]')
 parser.add_argument('--num_point', type=int, default=1024, help='Point Number [256/512/1024/2048] [default: 1024]')
 parser.add_argument('--max_epoch', type=int, default=250, help='Epoch to run [default: 250]')
 parser.add_argument('--batch_size', type=int, default=32, help='Batch Size during training [default: 32]')
@@ -61,17 +62,11 @@ BN_DECAY_CLIP = 0.99
 
 HOSTNAME = socket.gethostname()
 
-# ModelNet40 official train/test split
-# TRAIN_FILES = provider.getDataFiles( \
-#    os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/train_files.txt'))
+train_images = mnist.train_images()
+train_labels = mnist.train_labels()
 
-TRAIN_FILES = glob.glob(os.path.join(BASE_DIR, 'data/cifar-10-batches-py/data*'))
-
-# TEST_FILES = provider.getDataFiles(\
-#    os.path.join(BASE_DIR, 'data/modelnet40_ply_hdf5_2048/test_files.txt'))
-
-TEST_FILES = glob.glob(os.path.join(BASE_DIR, 'data/cifar-10-batches-py/test*'))
-
+test_images = mnist.test_images()
+test_labels = mnist.test_labels()
 
 def log_string(out_str):
     LOG_FOUT.write(out_str + '\n')
@@ -187,43 +182,38 @@ def train_one_epoch(sess, ops, train_writer):
     """ ops: dict mapping from string to tf ops """
     is_training = True
 
-    # Shuffle train files
-    train_file_idxs = np.arange(0, len(TRAIN_FILES))
-    np.random.shuffle(train_file_idxs)
+    #current_data = provider.raw_images_to_image_tensor(current_data,is_aug=True)
 
-    for fn in range(len(TRAIN_FILES)):
-        log_string('----' + str(fn) + '-----')
-        current_data, current_label = provider.unpickle(TRAIN_FILES[train_file_idxs[fn]])
-        current_data = provider.raw_images_to_image_tensor(current_data,is_aug=True)
-        current_data, current_label, _ = provider.shuffle_data(current_data, np.squeeze(current_label))
-        current_label = np.squeeze(current_label)
+    current_data, current_label = train_images, train_labels
+    current_data, current_label, _ = provider.shuffle_data(current_data, np.squeeze(current_label))
+    current_label = np.squeeze(current_label)
 
-        file_size = current_data.shape[0]
-        num_batches = file_size // BATCH_SIZE
+    file_size = current_data.shape[0]
+    num_batches = file_size // BATCH_SIZE
 
-        total_correct = 0
-        total_seen = 0
-        loss_sum = 0
+    total_correct = 0
+    total_seen = 0
+    loss_sum = 0
 
-        for batch_idx in range(num_batches):
-            start_idx = batch_idx * BATCH_SIZE
-            end_idx = (batch_idx + 1) * BATCH_SIZE
+    for batch_idx in range(num_batches):
+        start_idx = batch_idx * BATCH_SIZE
+        end_idx = (batch_idx + 1) * BATCH_SIZE
 
-            feed_dict = {ops['pointclouds_pl']: current_data[start_idx:end_idx, :, :, :],
-                         ops['labels_pl']: current_label[start_idx:end_idx],
-                         ops['is_training_pl']: is_training, }
-            summary, step, _, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
-                                                             ops['train_op'], ops['loss'], ops['pred']],
-                                                            feed_dict=feed_dict)
-            train_writer.add_summary(summary, step)
-            pred_val = np.argmax(pred_val, 1)
-            correct = np.sum(pred_val == current_label[start_idx:end_idx])
-            total_correct += correct
-            total_seen += BATCH_SIZE
-            loss_sum += loss_val
+        feed_dict = {ops['pointclouds_pl']: current_data[start_idx:end_idx, :, :, :],
+                     ops['labels_pl']: current_label[start_idx:end_idx],
+                     ops['is_training_pl']: is_training, }
+        summary, step, _, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
+                                                         ops['train_op'], ops['loss'], ops['pred']],
+                                                        feed_dict=feed_dict)
+        train_writer.add_summary(summary, step)
+        pred_val = np.argmax(pred_val, 1)
+        correct = np.sum(pred_val == current_label[start_idx:end_idx])
+        total_correct += correct
+        total_seen += BATCH_SIZE
+        loss_sum += loss_val
 
-        log_string('mean loss: %f' % (loss_sum / float(num_batches)))
-        log_string('accuracy: %f' % (total_correct / float(total_seen)))
+    log_string('mean loss: %f' % (loss_sum / float(num_batches)))
+    log_string('accuracy: %f' % (total_correct / float(total_seen)))
 
 
 def eval_one_epoch(sess, ops, test_writer):
