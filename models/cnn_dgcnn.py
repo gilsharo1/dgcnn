@@ -34,6 +34,7 @@ def get_model(point_cloud, is_training, bn_decay=None):
                          bn=True, is_training=is_training,
                          scope='cnn1', bn_decay=bn_decay)
 
+
     #res = net
     net = tf_util.conv2d(net, 64, [3, 3],
                          padding='SAME', stride=[1, 1],
@@ -43,17 +44,13 @@ def get_model(point_cloud, is_training, bn_decay=None):
     #net = tf.add(net,res)
     net = tf_util.max_pool2d(net, kernel_size=[3, 3], stride=[2, 2], scope='mp2')
 
-    edge_feature = tf.reshape(net, [batch_size, net.get_shape()[1].value*net.get_shape()[2].value, net.get_shape()[3].value])
-    adj_matrix = tf_util.pairwise_distance(edge_feature)
-    nn_idx = tf_util.knn(adj_matrix, k=k)
-    edge_feature = tf_util.get_edge_feature(edge_feature, nn_idx=nn_idx, k=k)
 
-    net = tf_util.conv2d(net, 64, [3, 3],
+    net = tf_util.conv2d(net, 128, [3, 3],
                          padding='SAME', stride=[1, 1],
                          bn=True, is_training=is_training,
                          scope='cnn3', bn_decay=bn_decay)
     #res = net
-    net = tf_util.conv2d(net, 64, [3, 3],
+    net = tf_util.conv2d(net, 128, [3, 3],
                          padding='SAME', stride=[1, 1],
                          bn=True, is_training=is_training,
                          scope='cnn4', bn_decay=bn_decay)
@@ -61,55 +58,43 @@ def get_model(point_cloud, is_training, bn_decay=None):
     #net = tf.add(net, res)
     net = tf_util.max_pool2d(net, kernel_size=[3, 3], stride=[2, 2], scope='mp2')
 
-    net = tf_util.conv2d(net, 128, [3, 3],
-                         padding='SAME', stride=[1, 1],
-                         bn=True, is_training=is_training,
-                         scope='cnn5', bn_decay=bn_decay)
+    edge_feature = tf.reshape(net, [batch_size, net.get_shape()[1].value * net.get_shape()[2].value,
+                                    net.get_shape()[3].value])
+    adj_matrix = tf_util.pairwise_distance(edge_feature)
+    nn_idx = tf_util.knn(adj_matrix, k=k)
+    edge_feature = tf_util.get_edge_feature(edge_feature, nn_idx=nn_idx, k=k)
 
-    #res = net
-    net = tf_util.conv2d(net, 128, [3, 3],
-                         padding='SAME', stride=[1, 1],
-                         bn=True, is_training=is_training,
-                         scope='cnn6', bn_decay=bn_decay)
 
-    #net = tf.add(net, res)
-    net = tf_util.max_pool2d(net, kernel_size=[3, 3], stride=[2, 2], scope='mp2')
-
-    net = tf_util.conv2d(net, 256, [3, 3],
-                         padding='SAME', stride=[1, 1],
-                         bn=True, is_training=is_training,
-                         scope='cnn7', bn_decay=bn_decay)
-    #res = net
-    net = tf_util.conv2d(net, 256, [3, 3],
-                         padding='SAME', stride=[1, 1],
-                         bn=True, is_training=is_training,
-                         scope='cnn8', bn_decay=bn_decay)
+    # net = tf_util.conv2d(net, 128, [3, 3],
+    #                      padding='SAME', stride=[1, 1],
+    #                      bn=True, is_training=is_training,
+    #                      scope='cnn5', bn_decay=bn_decay)
+    #
+    # #res = net
+    # net = tf_util.conv2d(net, 128, [3, 3],
+    #                      padding='SAME', stride=[1, 1],
+    #                      bn=True, is_training=is_training,
+    #                      scope='cnn6', bn_decay=bn_decay)
+    #
+    # #net = tf.add(net, res)
+    # net = tf_util.max_pool2d(net, kernel_size=[3, 3], stride=[2, 2], scope='mp2')
+    #
+    # net = tf_util.conv2d(net, 256, [3, 3],
+    #                      padding='SAME', stride=[1, 1],
+    #                      bn=True, is_training=is_training,
+    #                      scope='cnn7', bn_decay=bn_decay)
+    # #res = net
+    # net = tf_util.conv2d(net, 256, [3, 3],
+    #                      padding='SAME', stride=[1, 1],
+    #                      bn=True, is_training=is_training,
+    #                      scope='cnn8', bn_decay=bn_decay)
 
     #net = tf.add(net, res)
     ##############################################################################################
     ## END OF BASELINE CNN
 
-    edge_feature = tf_util.conv2d(edge_feature, 64, [1, 9],
-                         padding='VALID', stride=[1, 1],
-                         bn=True, is_training=is_training,
-                         scope='dgcnn3', bn_decay=bn_decay)
 
-    adj_matrix = tf_util.pairwise_distance(edge_feature)
-    nn_idx = tf_util.knn(adj_matrix, k=k)
-    edge_feature = tf_util.get_edge_feature(edge_feature, nn_idx=nn_idx, k=k)
-
-    edge_feature = tf_util.conv2d(edge_feature, 64, [1, 9],
-                         padding='VALID', stride=[1, 1],
-                         bn=True, is_training=is_training,
-                         scope='dgcnn4', bn_decay=bn_decay)
-
-    adj_matrix = tf_util.pairwise_distance(edge_feature)
-    nn_idx = tf_util.knn(adj_matrix, k=k)
-    edge_feature = tf_util.get_edge_feature(edge_feature, nn_idx=nn_idx, k=k)
-
-    edge_feature = tf_util.max_pool2d(edge_feature, kernel_size=[9, 1], stride=[4, 1], scope='dgmp2')
-
-    edge_feature = tf_util.conv2d(edge_feature, 128, [1, 9],
+    edge_feature = tf_util.conv2d(edge_feature, 256, [1, 9],
                          padding='VALID', stride=[1, 1],
                          bn=True, is_training=is_training,
                          scope='dgcnn5', bn_decay=bn_decay)
@@ -118,18 +103,18 @@ def get_model(point_cloud, is_training, bn_decay=None):
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(edge_feature, nn_idx=nn_idx, k=k)
 
-    edge_feature = tf_util.conv2d(edge_feature, 128, [1, 9],
+    edge_feature = tf_util.conv2d(edge_feature, 256, [1, 9],
                          padding='VALID', stride=[1, 1],
                          bn=True, is_training=is_training,
                          scope='dgcnn6', bn_decay=bn_decay)
+
+    edge_feature = tf_util.max_pool2d(edge_feature, kernel_size=[9, 1], stride=[4, 1], scope='dgmp3')
 
     adj_matrix = tf_util.pairwise_distance(edge_feature)
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(edge_feature, nn_idx=nn_idx, k=k)
 
-    edge_feature = tf_util.max_pool2d(edge_feature, kernel_size=[9, 1], stride=[4, 1], scope='dgmp3')
-
-    edge_feature = tf_util.conv2d(edge_feature, 256, [1, 9],
+    edge_feature = tf_util.conv2d(edge_feature, 512, [1, 9],
                          padding='VALID', stride=[1, 1],
                          bn=True, is_training=is_training,
                          scope='dgcnn7', bn_decay=bn_decay)
@@ -138,7 +123,7 @@ def get_model(point_cloud, is_training, bn_decay=None):
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(edge_feature, nn_idx=nn_idx, k=k)
 
-    edge_feature = tf_util.conv2d(edge_feature, 256, [1, 9],
+    edge_feature = tf_util.conv2d(edge_feature, 512, [1, 9],
                          padding='VALID', stride=[1, 1],
                          bn=True, is_training=is_training,
                          scope='dgcnn8', bn_decay=bn_decay)
@@ -149,9 +134,10 @@ def get_model(point_cloud, is_training, bn_decay=None):
     # START OF MERGE
     ##############################################################################################
     # MLP on global point cloud vector
-    net = tf.reshape(net, [batch_size, -1])
+    #net = tf.reshape(net, [batch_size, -1])
     edge_feature = tf.reshape(edge_feature, [batch_size, -1])
-    net = tf.concat([net, edge_feature], axis=-1)
+    net = edge_feature
+    #net = tf.concat([net, edge_feature], axis=-1)
     net = tf_util.fully_connected(net, 512, bn=True, is_training=is_training,
                                   scope='fc1', bn_decay=bn_decay, weight_decay=0.004)
     net = tf_util.dropout(net, keep_prob=0.8, is_training=is_training,
