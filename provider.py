@@ -181,6 +181,27 @@ def raw_images_to_tensor(data, is_aug=False):
   alldata = alldata.reshape(n,1024,5)
   return alldata
 
+
+def mnist_to_tensor(im, is_aug=False):
+  if is_aug:
+    im = augment_images(im)
+
+  im = im[:,:,:,np.newaxis]
+
+  im = (im.astype('float') - 128.0) / 128.0
+
+  n = im.shape[0]
+  coor = np.meshgrid(range(28), range(28))
+  x = np.repeat(coor[0][:, :, np.newaxis], n, axis=2).astype('float')
+  x = (x.transpose(2, 0, 1) - 14.0) * 4.0
+  y = np.repeat(coor[1][:, :, np.newaxis], n, axis=2).astype('float')
+  y = (y.transpose(2, 0, 1) - 14.0) * 4.0
+  alldata = np.concatenate((im, x[:, :, :, np.newaxis], y[:, :, :, np.newaxis]), axis=3)
+  alldata = alldata.reshape(n, 28*28, 3)
+
+  return alldata
+
+
 def raw_images_to_image_tensor(data, is_aug=False):
   n = data.shape[0]
   im = data.reshape(n, 3, 32, 32).transpose(0, 2, 3, 1).astype('uint8')
