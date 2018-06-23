@@ -182,7 +182,7 @@ def train_one_epoch(sess, ops, train_writer):
     # Shuffle train files
 
     current_data, current_label = train_images, train_labels
-    current_data = provider.mnist_to_tensor(current_data, is_aug=True)
+    current_data = provider.mnist_to_tensor(current_data, is_aug=False)
     current_data, current_label, _ = provider.shuffle_data(current_data, np.squeeze(current_label))
 
     file_size = current_data.shape[0]

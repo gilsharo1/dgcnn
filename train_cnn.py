@@ -185,7 +185,7 @@ def train_one_epoch(sess, ops, train_writer):
     #current_data = provider.raw_images_to_image_tensor(current_data,is_aug=True)
 
     current_data, current_label = train_images, train_labels
-    current_data = provider.augment_images(current_data)
+    #current_data = provider.augment_images(current_data)
     current_data = (current_data.astype('float') - 128.0) / 128.0
     current_data, current_label, _ = provider.shuffle_data(current_data, np.squeeze(current_label))
     current_label = np.squeeze(current_label)
