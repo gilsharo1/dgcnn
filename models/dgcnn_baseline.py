@@ -41,11 +41,6 @@ def get_model(point_cloud, is_training, bn_decay=None):
                          bn=True, is_training=is_training,
                          scope='cnn2', bn_decay=bn_decay)
 
-    adj_matrix = tf_util.pairwise_distance(net)
-    nn_idx = tf_util.knn(adj_matrix, k=k)
-    edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
-
-    net = tf.reduce_max(edge_feature, axis=-2, keep_dims=True)
     net = tf_util.max_pool2d(net, kernel_size=[9, 1], stride=[4, 1], scope='mp1')
 
     adj_matrix = tf_util.pairwise_distance(net)
@@ -66,11 +61,6 @@ def get_model(point_cloud, is_training, bn_decay=None):
                          bn=True, is_training=is_training,
                          scope='cnn4', bn_decay=bn_decay)
 
-    adj_matrix = tf_util.pairwise_distance(net)
-    nn_idx = tf_util.knn(adj_matrix, k=k)
-    edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
-
-    net = tf.reduce_max(edge_feature, axis=-2, keep_dims=True)
     net = tf_util.max_pool2d(net, kernel_size=[9, 1], stride=[4, 1], scope='mp2')
 
     adj_matrix = tf_util.pairwise_distance(net)
@@ -91,11 +81,6 @@ def get_model(point_cloud, is_training, bn_decay=None):
                          bn=True, is_training=is_training,
                          scope='cnn6', bn_decay=bn_decay)
 
-    adj_matrix = tf_util.pairwise_distance(net)
-    nn_idx = tf_util.knn(adj_matrix, k=k)
-    edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
-
-    net = tf.reduce_max(edge_feature, axis=-2, keep_dims=True)
     net = tf_util.max_pool2d(net, kernel_size=[9, 1], stride=[4, 1], scope='mp3')
 
     adj_matrix = tf_util.pairwise_distance(net)
