@@ -27,11 +27,11 @@ def get_model(point_cloud, is_training, bn_decay=None):
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(point_cloud, nn_idx=nn_idx, k=k)
 
-    net = tf_util.conv2d(edge_feature, 8, [1, 9],
+    net = tf_util.conv2d(edge_feature, 72, [1, 1],
                          padding='VALID', stride=[1, 1],
                          bn=False, is_training=is_training,
                          scope='cnn1', bn_decay=bn_decay)
-
+    net = tf.reduce_max(net, axis=-2, keep_dims=True)
     adj_matrix = tf_util.pairwise_distance(net)
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
@@ -43,11 +43,11 @@ def get_model(point_cloud, is_training, bn_decay=None):
     nn_idx = tf_util.knn(adj_matrix, k=k)
     edge_feature = tf_util.get_edge_feature(net, nn_idx=nn_idx, k=k)
 
-    net = tf_util.conv2d(edge_feature, 16, [1, 9],
+    net = tf_util.conv2d(edge_feature, 144, [1, 1],
                          padding='VALID', stride=[1, 1],
                          bn=False, is_training=is_training,
                          scope='cnn3', bn_decay=bn_decay)
-
+    net = tf.reduce_max(net, axis=-2, keep_dims=True)
 
     # MLP on global point cloud vector
     net = tf.reshape(net, [batch_size, -1])
