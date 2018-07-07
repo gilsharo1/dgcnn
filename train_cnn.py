@@ -230,6 +230,7 @@ def eval_one_epoch(sess, ops, test_writer):
     total_correct_class = [0 for _ in range(NUM_CLASSES)]
 
     current_data, current_label = test_images, test_labels
+    current_data = provider.augment_images(current_data)
     current_data = (current_data.astype('float') - 128.0) / 128.0
     current_label = np.squeeze(current_label)
     current_data = current_data[:, :, :, np.newaxis]
