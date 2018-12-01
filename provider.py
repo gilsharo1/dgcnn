@@ -20,7 +20,21 @@ if not os.path.exists(os.path.join(DATA_DIR, 'modelnet40_ply_hdf5_2048')):
 
 sometimes = lambda aug: iaa.Sometimes(1.0, aug)
 
-seq = iaa.Sequential([
+seq_training = iaa.Sequential([
+    sometimes([
+    iaa.Affine(rotate=(-25,25)),
+    #iaa.Pad(px=(0,3)),
+    #iaa.Crop(px=(0, 3)), # crop images from each side by 0 to 16px (randomly chosen)
+    #iaa.Fliplr(0.5), # horizontally flip 50% of the images
+    #iaa.GaussianBlur(sigma=(0, 1.0)), # blur images with a sigma of 0 to 3.0
+    #iaa.AdditiveGaussianNoise(scale=(0,0.03*255)),
+    #iaa.Add(value=(-20,20)),
+    #iaa.Multiply(mul=(0.8,1.2)),
+    #iaa.Dropout((0.0, 0.05)),
+    ])
+])
+
+seq_validation = iaa.Sequential([
     sometimes([
     iaa.Affine(rotate=(-75,75)),
     #iaa.Pad(px=(0,3)),
@@ -184,9 +198,9 @@ def raw_images_to_tensor(data, is_aug=False):
   return alldata
 
 
-def mnist_to_tensor(im, is_aug=False):
+def mnist_to_tensor(im, is_aug=False, is_training=False):
   if is_aug:
-    im = augment_images(im)
+    im = augment_images(im, is_training)
 
   im = im[:,:,:,np.newaxis]
 
@@ -216,8 +230,11 @@ def raw_images_to_image_tensor(data, is_aug=False):
   return im
 
 
-def augment_images(data):
-    return seq.augment_images(data)
+def augment_images(data, is_training):
+  if is_training:
+    return seq_training.augment_images(data)
+  else:
+    return seq_validation.augment_images(data)
 
 
 def load_h5_data_label_seg(h5_filename):
