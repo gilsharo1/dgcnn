@@ -20,7 +20,33 @@ if not os.path.exists(os.path.join(DATA_DIR, 'modelnet40_ply_hdf5_2048')):
 
 sometimes = lambda aug: iaa.Sometimes(0.9, aug)
 
-seq = iaa.Sequential([
+seq_train = iaa.Sequential([
+    sometimes([
+    iaa.Affine(rotate=(-25,25)),
+    iaa.Pad(px=(0,3)),
+    iaa.Crop(px=(0, 3)), # crop images from each side by 0 to 16px (randomly chosen)
+    iaa.Fliplr(0.5), # horizontally flip 50% of the images
+    #iaa.GaussianBlur(sigma=(0, 1.0)), # blur images with a sigma of 0 to 3.0
+    #iaa.AdditiveGaussianNoise(scale=(0,0.03*255)),
+    iaa.Add(value=(-20,20)),
+    iaa.Multiply(mul=(0.8,1.2)),
+    iaa.Dropout((0.0, 0.05)),])
+])
+
+seq_validation = iaa.Sequential([
+    sometimes([
+    iaa.Affine(rotate=(-75,75)),
+    iaa.Pad(px=(0,3)),
+    iaa.Crop(px=(0, 3)), # crop images from each side by 0 to 16px (randomly chosen)
+    iaa.Fliplr(0.5), # horizontally flip 50% of the images
+    #iaa.GaussianBlur(sigma=(0, 1.0)), # blur images with a sigma of 0 to 3.0
+    #iaa.AdditiveGaussianNoise(scale=(0,0.03*255)),
+    iaa.Add(value=(-20,20)),
+    iaa.Multiply(mul=(0.8,1.2)),
+    iaa.Dropout((0.0, 0.05)),])
+])
+
+seq_dgcnn = iaa.Sequential([
     sometimes([
     iaa.Pad(px=(0,3)),
     iaa.Crop(px=(0, 3)), # crop images from each side by 0 to 16px (randomly chosen)
@@ -31,6 +57,9 @@ seq = iaa.Sequential([
     iaa.Multiply(mul=(0.8,1.2)),
     iaa.Dropout((0.0, 0.05)),])
 ])
+
+DGCNN_TRAIN_AUG_ANGLE = 25
+DGCNN_VALIDATION_AUG_ANGLE = 75
 
 def shuffle_data(data, labels):
   """ Shuffle data and labels.
@@ -169,24 +198,52 @@ def unpickle(file):
         dict = cPickle.load(fo)
     return dict['data'], dict['labels']
 
-def raw_images_to_tensor(data, is_aug=False):
+def rotate_xy_grid(x,y,angle):
+    x_vec = np.reshape(x, (np.prod(x.shape), 1))
+    y_vec = np.reshape(y, (np.prod(y.shape), 1))
+    c = np.concatenate((x_vec, y_vec), axis=1)
+    xy_mat = np.transpose(c)
+    cosval = np.cos(angle)
+    sinval = np.sin(angle)
+    rotation_matrix = np.array([[cosval,sinval], [-sinval, cosval]])
+    res = np.matmul(rotation_matrix, xy_mat)
+    return np.reshape(res[0,:],x.shape),np.reshape(res[1,:],y.shape)
+
+def augment_xy_rotation(x,y,angle):
+    n = x.shape[0]
+    angles = np.random.uniform(-angle, angle,n)
+    for idx in range(n):
+        x[idx,:,:],y[idx,:,:] = rotate_xy_grid(x[idx,:,:],y[idx,:,:],angles[idx])
+    return x,y
+
+
+
+def raw_images_to_tensor(data, is_aug=False, is_train=False):
   n = data.shape[0]
-  im = raw_images_to_image_tensor(data, is_aug)
+  im = raw_images_to_image_tensor(data, is_aug, is_train, is_dgcnn=False)
   coor = np.meshgrid(range(32), range(32))
   x = np.repeat(coor[0][:, :, np.newaxis], n, axis=2).astype('float')
   x = (x.transpose(2, 0, 1)-16.0)*2.0
   y = np.repeat(coor[1][:, :, np.newaxis], n, axis=2).astype('float')
   y = (y.transpose(2, 0, 1)-16.0)*2.0
+  if is_aug and is_train:
+      x,y = augment_xy_rotation(x,y,DGCNN_TRAIN_AUG_ANGLE)
+  if is_aug and not is_train:
+      x,y = augment_xy_rotation(x,y,DGCNN_VALIDATION_AUG_ANGLE)
   alldata = np.concatenate((im, x[:,:,:,np.newaxis], y[:,:,:,np.newaxis]), axis=3)
   alldata = alldata.reshape(n,1024,5)
   return alldata
 
-def raw_images_to_image_tensor(data, is_aug=False):
+def raw_images_to_image_tensor(data, is_aug=False, is_train=False, is_dgcnn = False):
   n = data.shape[0]
   im = data.reshape(n, 3, 32, 32).transpose(0, 2, 3, 1).astype('uint8')
 
-  if is_aug:
-    im = seq.augment_images(im)
+  if is_aug and is_train and not is_dgcnn:
+    im = seq_train.augment_images(im)
+  if is_aug and not is_train and not is_dgcnn:
+    im = seq_validation.augment_images(im)
+  if is_aug and is_dgcnn:
+    im = seq_dgcnn.augment_images(im)
 
   im = (im.astype('float')-128.0)/128.0
 

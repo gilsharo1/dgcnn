@@ -238,7 +238,7 @@ def eval_one_epoch(sess, ops, test_writer):
     for fn in range(len(TEST_FILES)):
         log_string('----' + str(fn) + '-----')
         current_data, current_label = provider.unpickle(TEST_FILES[fn])
-        current_data = provider.raw_images_to_image_tensor(current_data)
+        current_data = provider.raw_images_to_image_tensor(current_data,is_aug=True)
         current_label = np.squeeze(current_label)
 
         file_size = current_data.shape[0]
