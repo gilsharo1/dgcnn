@@ -35,15 +35,7 @@ seq_train = iaa.Sequential([
 
 seq_validation = iaa.Sequential([
     sometimes([
-    iaa.Affine(rotate=(-75,75)),
-    iaa.Pad(px=(0,3)),
-    iaa.Crop(px=(0, 3)), # crop images from each side by 0 to 16px (randomly chosen)
-    iaa.Fliplr(0.5), # horizontally flip 50% of the images
-    #iaa.GaussianBlur(sigma=(0, 1.0)), # blur images with a sigma of 0 to 3.0
-    #iaa.AdditiveGaussianNoise(scale=(0,0.03*255)),
-    iaa.Add(value=(-20,20)),
-    iaa.Multiply(mul=(0.8,1.2)),
-    iaa.Dropout((0.0, 0.05)),])
+    iaa.Affine(rotate=(-75,75)),])
 ])
 
 seq_dgcnn = iaa.Sequential([
@@ -220,7 +212,7 @@ def augment_xy_rotation(x,y,angle):
 
 def raw_images_to_tensor(data, is_aug=False, is_train=False):
   n = data.shape[0]
-  im = raw_images_to_image_tensor(data, is_aug, is_train, is_dgcnn=False)
+  im = raw_images_to_image_tensor(data, is_aug, is_train, is_dgcnn=True)
   coor = np.meshgrid(range(32), range(32))
   x = np.repeat(coor[0][:, :, np.newaxis], n, axis=2).astype('float')
   x = (x.transpose(2, 0, 1)-16.0)*2.0
@@ -242,7 +234,7 @@ def raw_images_to_image_tensor(data, is_aug=False, is_train=False, is_dgcnn = Fa
     im = seq_train.augment_images(im)
   if is_aug and not is_train and not is_dgcnn:
     im = seq_validation.augment_images(im)
-  if is_aug and is_dgcnn:
+  if is_aug and is_train and is_dgcnn:
     im = seq_dgcnn.augment_images(im)
 
   im = (im.astype('float')-128.0)/128.0
